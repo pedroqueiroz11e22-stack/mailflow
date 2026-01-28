@@ -16,10 +16,22 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
-    console.log('[DEMO MODE] Using demonstration emails');
+    // Get settings from database (fallback to env vars if not set)
+    const settingsList = await base44.asServiceRole.entities.Settings.list();
+    const settings = settingsList.length > 0 ? settingsList[0] : {};
+
+    const imapHost = settings.imap_host || Deno.env.get('IMAP_HOST');
+    const imapPort = settings.imap_port || Deno.env.get('IMAP_PORT');
+    const imapUser = settings.smtp_user || Deno.env.get('SMTP_USER');
+    const imapPassword = settings.smtp_password || Deno.env.get('SMTP_PASSWORD');
+
+    if (!imapHost || !imapUser || !imapPassword) {
+      console.log('[DEMO MODE] IMAP not configured, using demonstration emails');
+    } else {
+      console.log(`[IMAP] Configuration found: ${imapHost}:${imapPort}`);
+    }
     
-    // Modo demonstração - adiciona emails de exemplo quando a função é chamada
-    // Para usar IMAP real, configure as variáveis: IMAP_HOST, IMAP_PORT, SMTP_USER, SMTP_PASSWORD
+    // Modo demonstração quando IMAP não está configurado
     const mockEmails = [
       {
         from_email: 'cliente@exemplo.com',
