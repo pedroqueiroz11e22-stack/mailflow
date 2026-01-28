@@ -25,7 +25,12 @@ export default function Contacts() {
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Contact.create(data),
-    onSuccess: () => {
+    onSuccess: (contact) => {
+      base44.analytics.track({
+        eventName: 'contact_created',
+        properties: { contact_id: contact.id, has_tags: contact.tags?.length > 0 }
+      });
+      
       queryClient.invalidateQueries(['contacts']);
       setShowAddDialog(false);
     },
@@ -41,7 +46,13 @@ export default function Contacts() {
 
   const deleteMutation = useMutation({
     mutationFn: (id) => base44.entities.Contact.delete(id),
-    onSuccess: () => queryClient.invalidateQueries(['contacts']),
+    onSuccess: () => {
+      base44.analytics.track({
+        eventName: 'contact_deleted'
+      });
+      
+      queryClient.invalidateQueries(['contacts']);
+    },
   });
 
   const handleSubmit = (data) => {
@@ -53,6 +64,11 @@ export default function Contacts() {
   };
 
   const handleImportComplete = (count) => {
+    base44.analytics.track({
+      eventName: 'contacts_imported',
+      properties: { count: count }
+    });
+    
     queryClient.invalidateQueries(['contacts']);
     setShowImportDialog(false);
     alert(`${count} contatos importados com sucesso!`);

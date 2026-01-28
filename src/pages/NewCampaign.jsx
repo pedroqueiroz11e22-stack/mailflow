@@ -45,11 +45,17 @@ export default function NewCampaign() {
 
   const handleSaveDraft = async () => {
     try {
-      await createCampaign.mutateAsync({
+      const campaign = await createCampaign.mutateAsync({
         ...formData,
         status: 'draft',
         recipients_count: contacts.length,
       });
+      
+      base44.analytics.track({
+        eventName: 'campaign_draft_saved',
+        properties: { campaign_id: campaign.id }
+      });
+      
       alert('Rascunho salvo com sucesso!');
       navigate(createPageUrl('Campaigns'));
     } catch (error) {
@@ -82,14 +88,30 @@ export default function NewCampaign() {
         failed_count: 0,
       });
 
-      await base44.functions.invoke('sendCampaign', {
+      const result = await base44.functions.invoke('sendCampaign', {
         campaign_id: campaign.id,
         contacts: contacts.map(c => ({ email: c.email, name: c.name })),
+      });
+
+      base44.analytics.track({
+        eventName: 'campaign_sent',
+        properties: {
+          campaign_id: campaign.id,
+          recipients_count: contacts.length,
+          sent_count: result.data?.sent_count || 0,
+          failed_count: result.data?.failed_count || 0,
+          success: true,
+        }
       });
 
       alert('Campanha enviada com sucesso!');
       navigate(createPageUrl('Campaigns'));
     } catch (error) {
+      base44.analytics.track({
+        eventName: 'campaign_send_failed',
+        properties: { error: error.message }
+      });
+      
       alert('Erro ao enviar campanha: ' + error.message);
     } finally {
       setIsSending(false);
