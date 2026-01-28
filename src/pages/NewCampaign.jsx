@@ -9,7 +9,8 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeft, Send, Save, Calendar, Clock } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { createPageUrl } from '../utils';
-import EmailEditor from '../components/campaigns/EmailEditor';
+import EnhancedEmailEditor from '../components/campaigns/EnhancedEmailEditor';
+import TemplateManager from '../components/campaigns/TemplateManager';
 
 export default function NewCampaign() {
   const navigate = useNavigate();
