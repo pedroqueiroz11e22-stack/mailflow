@@ -53,6 +53,7 @@ import NewCampaign from './pages/NewCampaign';
 import Campaigns from './pages/Campaigns';
 import Settings from './pages/Settings';
 import Inbox from './pages/Inbox';
+import Analytics from './pages/Analytics';
 
 
 export const PAGES = {
@@ -62,6 +63,7 @@ export const PAGES = {
     "Campaigns": Campaigns,
     "Settings": Settings,
     "Inbox": Inbox,
+    "Analytics": Analytics,
 }
 
 export const pagesConfig = {
