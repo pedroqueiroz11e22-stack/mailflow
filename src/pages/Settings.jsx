@@ -50,7 +50,12 @@ export default function Settings() {
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Settings.create(data),
-    onSuccess: () => {
+    onSuccess: (settings) => {
+      base44.analytics.track({
+        eventName: 'settings_created',
+        properties: { has_smtp: !!settings.smtp_host }
+      });
+      
       queryClient.invalidateQueries(['settings']);
       alert('Configurações salvas com sucesso!');
     },
@@ -59,6 +64,11 @@ export default function Settings() {
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Settings.update(id, data),
     onSuccess: () => {
+      base44.analytics.track({
+        eventName: 'settings_updated',
+        properties: { has_smtp: !!formData.smtp_host }
+      });
+      
       queryClient.invalidateQueries(['settings']);
       alert('Configurações atualizadas com sucesso!');
     },
@@ -70,9 +80,19 @@ export default function Settings() {
       return response.data;
     },
     onSuccess: (data) => {
+      base44.analytics.track({
+        eventName: 'smtp_test_success',
+        properties: { host: formData.smtp_host }
+      });
+      
       setTestResult({ success: true, message: data.message });
     },
     onError: (error) => {
+      base44.analytics.track({
+        eventName: 'smtp_test_failed',
+        properties: { host: formData.smtp_host }
+      });
+      
       setTestResult({ success: false, message: error.response?.data?.error || 'Erro ao testar SMTP' });
     },
   });
