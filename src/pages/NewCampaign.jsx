@@ -6,7 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, Send, Save } from "lucide-react";
+import { ArrowLeft, Send, Save, Calendar, Clock } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { createPageUrl } from '../utils';
 import EmailEditor from '../components/campaigns/EmailEditor';
 
@@ -19,6 +20,9 @@ export default function NewCampaign() {
     content: '',
   });
   const [isSending, setIsSending] = useState(false);
+  const [scheduleEnabled, setScheduleEnabled] = useState(false);
+  const [scheduledDate, setScheduledDate] = useState('');
+  const [scheduledTime, setScheduledTime] = useState('');
 
   const { data: contacts = [] } = useQuery({
     queryKey: ['contacts'],
@@ -74,7 +78,50 @@ export default function NewCampaign() {
       return;
     }
 
-    if (!confirm(`Deseja enviar esta campanha para ${contacts.length} contatos?`)) {
+    if (scheduleEnabled) {
+      if (!scheduledDate || !scheduledTime) {
+        alert('Por favor, defina a data e hora para o agendamento');
+        return;
+      }
+
+      const scheduledDateTime = new Date(`${scheduledDate}T${scheduledTime}`);
+      if (scheduledDateTime <= new Date()) {
+        alert('A data/hora de agendamento deve ser no futuro');
+        return;
+      }
+
+      if (!confirm(`Deseja agendar esta campanha para ${scheduledDateTime.toLocaleString('pt-BR')}?`)) {
+        return;
+      }
+
+      setIsSending(true);
+      try {
+        await createCampaign.mutateAsync({
+          ...formData,
+          status: 'draft',
+          recipients_count: contacts.length,
+          scheduled_date: scheduledDateTime.toISOString(),
+        });
+
+        base44.analytics.track({
+          eventName: 'campaign_scheduled',
+          properties: {
+            recipients_count: contacts.length,
+            scheduled_date: scheduledDateTime.toISOString(),
+          }
+        });
+
+        alert('Campanha agendada com sucesso!');
+        navigate(createPageUrl('Campaigns'));
+      } catch (error) {
+        alert('Erro ao agendar campanha: ' + error.message);
+      } finally {
+        setIsSending(false);
+      }
+      return;
+    }
+
+    if (!confirm(`Deseja enviar esta campanha para ${contacts.length} contatos agora?`)) {
       return;
     }
 
@@ -186,6 +233,63 @@ export default function NewCampaign() {
             </CardContent>
           </Card>
 
+          {/* Schedule Settings */}
+          <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="w-5 h-5" />
+                Agendamento
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div>
+                  <Label htmlFor="schedule_toggle" className="cursor-pointer font-medium">
+                    Agendar envio
+                  </Label>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Defina uma data e hora para envio futuro
+                  </p>
+                </div>
+                <Switch
+                  id="schedule_toggle"
+                  checked={scheduleEnabled}
+                  onCheckedChange={setScheduleEnabled}
+                />
+              </div>
+
+              {scheduleEnabled && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in duration-300">
+                  <div className="space-y-2">
+                    <Label htmlFor="scheduled_date" className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4" />
+                      Data
+                    </Label>
+                    <Input
+                      id="scheduled_date"
+                      type="date"
+                      value={scheduledDate}
+                      onChange={(e) => setScheduledDate(e.target.value)}
+                      min={new Date().toISOString().split('T')[0]}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="scheduled_time" className="flex items-center gap-2">
+                      <Clock className="w-4 h-4" />
+                      Hora
+                    </Label>
+                    <Input
+                      id="scheduled_time"
+                      type="time"
+                      value={scheduledTime}
+                      onChange={(e) => setScheduledTime(e.target.value)}
+                    />
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Recipients Info */}
           <Card className="bg-indigo-50 border-indigo-200">
             <CardContent className="pt-6">
@@ -213,8 +317,17 @@ export default function NewCampaign() {
               disabled={isSending}
               className="bg-green-600 hover:bg-green-700 gap-2"
             >
-              <Send className="w-4 h-4" />
-              {isSending ? 'Enviando...' : 'Enviar Campanha'}
+              {scheduleEnabled ? (
+                <>
+                  <Calendar className="w-4 h-4" />
+                  {isSending ? 'Agendando...' : 'Agendar Campanha'}
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4" />
+                  {isSending ? 'Enviando...' : 'Enviar Agora'}
+                </>
+              )}
             </Button>
           </div>
         </div>
