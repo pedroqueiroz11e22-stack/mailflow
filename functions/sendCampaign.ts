@@ -50,9 +50,28 @@ Deno.serve(async (req) => {
           subject: campaign.subject,
           html: campaign.content,
         });
+
+        // Track sent event
+        await base44.asServiceRole.entities.EmailEvent.create({
+          campaign_id: campaign_id,
+          contact_email: contact.email,
+          event_type: 'sent',
+          event_date: new Date().toISOString(),
+        });
+
         sentCount++;
       } catch (error) {
         console.error(`Failed to send to ${contact.email}:`, error.message);
+        
+        // Track bounced event
+        await base44.asServiceRole.entities.EmailEvent.create({
+          campaign_id: campaign_id,
+          contact_email: contact.email,
+          event_type: 'bounced',
+          event_date: new Date().toISOString(),
+          metadata: { error: error.message }
+        });
+        
         failedCount++;
       }
     }
