@@ -104,8 +104,8 @@ export default function Inbox() {
   const unreadCount = emails.filter(e => !e.is_read).length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50 to-purple-50">
-      <div className="max-w-7xl mx-auto p-6 md:p-8">
+    <div className="min-h-screen bg-white">
+      <div className="max-w-7xl mx-auto px-6 py-12 md:px-12 md:py-16">
         <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
             <Link to={createPageUrl('Dashboard')}>
@@ -113,11 +113,11 @@ export default function Inbox() {
                 <ArrowLeft className="w-4 h-4" /> Voltar
               </Button>
             </Link>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2 flex items-center gap-3">
-              <Mail className="w-10 h-10 text-indigo-600" />
-              Caixa de Entrada
+            <h1 className="text-5xl font-semibold text-gray-900 mb-3 tracking-tight flex items-center gap-4">
+              <Mail className="w-12 h-12 text-indigo-600" />
+              Inbox
             </h1>
-            <p className="text-gray-600">
+            <p className="text-lg text-gray-500">
               {unreadCount > 0 ? `${unreadCount} não lidos` : 'Nenhum email não lido'}
             </p>
           </div>
@@ -131,7 +131,7 @@ export default function Inbox() {
           </Button>
         </div>
 
-        <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg mb-6">
+        <Card className="bg-white border border-gray-100 shadow-sm mb-8">
           <CardContent className="pt-6">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -145,7 +145,7 @@ export default function Inbox() {
           </CardContent>
         </Card>
 
-        <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+        <Card className="bg-white border border-gray-100 shadow-sm">
           <CardHeader>
             <CardTitle>Emails Recebidos ({filteredEmails.length})</CardTitle>
           </CardHeader>

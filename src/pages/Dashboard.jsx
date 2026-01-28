@@ -28,15 +28,15 @@ export default function Dashboard() {
   const recentCampaigns = campaigns.slice(0, 5);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50 to-purple-50">
-      <div className="max-w-7xl mx-auto p-6 md:p-8">
+    <div className="min-h-screen bg-white">
+      <div className="max-w-7xl mx-auto px-6 py-12 md:px-12 md:py-16">
         {/* Header */}
-        <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="mb-12 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">
-              Dashboard de Email Marketing
+            <h1 className="text-5xl font-semibold text-gray-900 mb-3 tracking-tight">
+              Email Marketing
             </h1>
-            <p className="text-gray-600">Gerencie suas campanhas e contatos</p>
+            <p className="text-lg text-gray-500">Gerencie suas campanhas e contatos</p>
           </div>
           <div className="flex gap-2">
             <Link to={createPageUrl('Analytics')}>
@@ -58,8 +58,8 @@ export default function Dashboard() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
+          <Card className="bg-white border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-gray-600">
                 Total de Contatos
@@ -75,7 +75,7 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+          <Card className="bg-white border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-gray-600">
                 Campanhas Criadas
@@ -88,7 +88,7 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+          <Card className="bg-white border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-gray-600">
                 Campanhas Enviadas
@@ -101,7 +101,7 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-indigo-600 to-purple-600 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+          <Card className="bg-gradient-to-br from-indigo-600 to-purple-600 text-white border-0 shadow-sm hover:shadow-md transition-all duration-200">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-indigo-100">
                 Taxa de Entrega
@@ -118,10 +118,10 @@ export default function Dashboard() {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-12">
           <Link to={createPageUrl('NewCampaign')}>
-            <Card className="bg-gradient-to-br from-indigo-600 to-indigo-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer hover:scale-105 transform">
-              <CardContent className="flex items-center justify-between p-8">
+            <Card className="bg-gradient-to-br from-indigo-600 to-indigo-700 text-white border-0 shadow-sm hover:shadow-lg transition-all duration-200 cursor-pointer hover:-translate-y-1 transform">
+              <CardContent className="flex items-center justify-between p-10">
                 <div>
                   <h3 className="text-2xl font-bold mb-2">Nova Campanha</h3>
                   <p className="text-indigo-100">Criar e enviar email marketing</p>
@@ -132,8 +132,8 @@ export default function Dashboard() {
           </Link>
 
           <Link to={createPageUrl('Contacts')}>
-            <Card className="bg-gradient-to-br from-purple-600 to-purple-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer hover:scale-105 transform">
-              <CardContent className="flex items-center justify-between p-8">
+            <Card className="bg-gradient-to-br from-purple-600 to-purple-700 text-white border-0 shadow-sm hover:shadow-lg transition-all duration-200 cursor-pointer hover:-translate-y-1 transform">
+              <CardContent className="flex items-center justify-between p-10">
                 <div>
                   <h3 className="text-2xl font-bold mb-2">Gerenciar Contatos</h3>
                   <p className="text-purple-100">Adicionar e organizar destinatários</p>
@@ -145,10 +145,10 @@ export default function Dashboard() {
         </div>
 
         {/* Recent Campaigns */}
-        <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+        <Card className="bg-white border border-gray-100 shadow-sm">
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle className="text-xl font-bold">Campanhas Recentes</CardTitle>
+              <CardTitle className="text-2xl font-semibold">Campanhas Recentes</CardTitle>
               <Link to={createPageUrl('Campaigns')}>
                 <Button variant="outline" size="sm">Ver Todas</Button>
               </Link>

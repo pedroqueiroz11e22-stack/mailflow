@@ -166,8 +166,8 @@ export default function NewCampaign() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50 to-purple-50">
-      <div className="max-w-5xl mx-auto p-6 md:p-8">
+    <div className="min-h-screen bg-white">
+      <div className="max-w-5xl mx-auto px-6 py-12 md:px-12 md:py-16">
         {/* Header */}
         <div className="mb-8">
           <Button

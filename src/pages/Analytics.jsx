@@ -134,8 +134,8 @@ export default function Analytics() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50 to-purple-50">
-      <div className="max-w-7xl mx-auto p-6 md:p-8">
+    <div className="min-h-screen bg-white">
+      <div className="max-w-7xl mx-auto px-6 py-12 md:px-12 md:py-16">
         <div className="mb-8">
           <Link to={createPageUrl('Dashboard')}>
             <Button variant="ghost" className="mb-2 gap-2">
@@ -144,11 +144,11 @@ export default function Analytics() {
           </Link>
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-2 flex items-center gap-3">
-                <BarChart3 className="w-10 h-10 text-indigo-600" />
-                Analytics de Campanhas
+              <h1 className="text-5xl font-semibold text-gray-900 mb-3 tracking-tight flex items-center gap-4">
+                <BarChart3 className="w-12 h-12 text-indigo-600" />
+                Analytics
               </h1>
-              <p className="text-gray-600">Análise detalhada de desempenho das campanhas</p>
+              <p className="text-lg text-gray-500">Análise detalhada de desempenho</p>
             </div>
             <Button onClick={handleExportCSV} variant="outline" className="gap-2">
               <Download className="w-4 h-4" />

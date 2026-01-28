@@ -50,7 +50,7 @@ export default function Campaigns() {
         </div>
 
         {/* Campaigns List */}
-        <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+        <Card className="bg-white border border-gray-100 shadow-sm">
           <CardHeader>
             <CardTitle>Todas as Campanhas ({campaigns.length})</CardTitle>
           </CardHeader>

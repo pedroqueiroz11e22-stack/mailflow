@@ -109,13 +109,13 @@ export default function Contacts() {
   }, [contacts, searchTerm, filterList, filterTag, filterStatus]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50 to-pink-50">
-      <div className="max-w-7xl mx-auto p-6 md:p-8">
+    <div className="min-h-screen bg-white">
+      <div className="max-w-7xl mx-auto px-6 py-12 md:px-12 md:py-16">
         {/* Header */}
-        <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div className="mb-12 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">Contatos</h1>
-            <p className="text-gray-600">Gerencie sua lista de destinatários</p>
+            <h1 className="text-5xl font-semibold text-gray-900 mb-3 tracking-tight">Contatos</h1>
+            <p className="text-lg text-gray-500">Gerencie sua lista de destinatários</p>
           </div>
           <div className="flex gap-3 flex-wrap">
             <Button
@@ -142,7 +142,7 @@ export default function Contacts() {
         </div>
 
         {/* Search & Filters */}
-        <Card className="mb-6 bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+        <Card className="mb-8 bg-white border border-gray-100 shadow-sm">
           <CardContent className="pt-6 space-y-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -229,7 +229,7 @@ export default function Contacts() {
         </Card>
 
         {/* Contacts List */}
-        <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+        <Card className="bg-white border border-gray-100 shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>Total: {filteredContacts.length} contatos</span>
