@@ -185,8 +185,8 @@ export default function Analytics() {
           </Select>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
+          <Card className="bg-white border border-gray-100 shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-gray-600">Taxa de Abertura</CardTitle>
               <Eye className="w-5 h-5 text-green-600" />
@@ -231,8 +231,8 @@ export default function Analytics() {
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-12">
+          <Card className="bg-white border border-gray-100 shadow-sm">
             <CardHeader>
               <CardTitle>Eventos ao Longo do Tempo</CardTitle>
               <CardDescription>Visualize a tendência de envios, aberturas e cliques</CardDescription>
