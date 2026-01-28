@@ -147,9 +147,14 @@ function convertBlocksToHTML(blocks) {
     });
 
   } catch (error) {
-    console.error('Error sending campaign:', error);
+    console.error('[ERROR] Failed to send campaign:', error.message);
+    console.error('[ERROR] Stack:', error.stack);
+    
     return Response.json({ 
-      error: error.message 
+      error: error.message,
+      details: error.stack,
+      provider: 'SMTP',
+      action: 'send_campaign'
     }, { status: 500 });
   }
 });
