@@ -54,6 +54,7 @@ import Campaigns from './pages/Campaigns';
 import Settings from './pages/Settings';
 import Inbox from './pages/Inbox';
 import Analytics from './pages/Analytics';
+import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
@@ -69,4 +70,5 @@ export const PAGES = {
 export const pagesConfig = {
     mainPage: "Dashboard",
     Pages: PAGES,
+    Layout: __Layout,
 };
