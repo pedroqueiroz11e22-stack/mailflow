@@ -34,9 +34,52 @@ export default function VisualEmailBuilder({ value, onChange }) {
   const [editingBlock, setEditingBlock] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
 
+  const generateHTMLFromBlocks = (blocks) => {
+    let html = '<div style="max-width: 600px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif; padding: 20px;">';
+    
+    blocks.forEach(block => {
+      const { type, content } = block;
+      
+      switch (type) {
+        case 'heading':
+          const size = content.level === 'h1' ? '32px' : content.level === 'h2' ? '24px' : '20px';
+          html += `<h${content.level.slice(1)} style="text-align: ${content.align}; color: ${content.color}; margin: 0 0 16px 0; font-size: ${size};">${content.text}</h${content.level.slice(1)}>`;
+          break;
+        case 'text':
+          html += `<p style="text-align: ${content.align}; color: ${content.color}; margin: 0 0 16px 0; line-height: 1.6;">${content.text}</p>`;
+          break;
+        case 'button':
+          html += `<div style="text-align: ${content.align}; margin: 16px 0;"><a href="${content.url}" style="display: inline-block; padding: 12px 32px; background-color: ${content.bgColor}; color: ${content.textColor}; text-decoration: none; border-radius: 8px; font-weight: 600;">${content.text}</a></div>`;
+          break;
+        case 'image':
+          if (content.url) {
+            html += `<div style="text-align: ${content.align}; margin: 16px 0;"><img src="${content.url}" alt="${content.alt}" style="width: ${content.width}; max-width: 100%; height: auto;" /></div>`;
+          }
+          break;
+        case 'divider':
+          html += `<hr style="border: none; border-top: ${content.height}px solid ${content.color}; margin: 24px 0;" />`;
+          break;
+        case 'spacer':
+          html += `<div style="height: ${content.height}px;"></div>`;
+          break;
+        case 'columns':
+          html += '<table style="width: 100%; margin: 16px 0;"><tr>';
+          content.contents.forEach(col => {
+            html += `<td style="width: ${100/content.columns}%; vertical-align: top; padding: 0 8px;">${col || ''}</td>`;
+          });
+          html += '</tr></table>';
+          break;
+      }
+    });
+    
+    html += '</div>';
+    return html;
+  };
+
   const updateBlocks = (newBlocks) => {
     setBlocks(newBlocks);
-    onChange(JSON.stringify(newBlocks));
+    // Store as HTML for email sending
+    onChange(generateHTMLFromBlocks(newBlocks));
   };
 
   const addBlock = (type) => {
@@ -138,23 +181,7 @@ export default function VisualEmailBuilder({ value, onChange }) {
     }
   };
 
-  const generateHTML = () => {
-    let html = `
-      <div style="max-width: 600px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-    `;
-    
-    blocks.forEach(block => {
-      html += '<div style="margin-bottom: 24px;">';
-      const tempDiv = document.createElement('div');
-      const rendered = renderBlockPreview(block);
-      // Simple conversion for preview
-      html += `<div>${JSON.stringify(block.content)}</div>`;
-      html += '</div>';
-    });
-    
-    html += '</div>';
-    return html;
-  };
+
 
   return (
     <div className="grid grid-cols-12 gap-6">
