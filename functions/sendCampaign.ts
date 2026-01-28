@@ -43,13 +43,26 @@ Deno.serve(async (req) => {
     let sentCount = 0;
     let failedCount = 0;
 
+    // Prepare email content - handle both HTML and JSON format from builder
+    let emailContent = campaign.content;
+    try {
+      // Check if content is JSON from visual builder
+      const parsed = JSON.parse(campaign.content);
+      if (Array.isArray(parsed)) {
+        // It's from visual builder, convert to HTML
+        emailContent = convertBlocksToHTML(parsed);
+      }
+    } catch {
+      // Content is already HTML, use as is
+    }
+
     for (const contact of contacts) {
       try {
         await transporter.sendMail({
           from: `${campaign.from_name || senderName} <${senderEmail}>`,
           to: contact.email,
           subject: campaign.subject,
-          html: campaign.content,
+          html: emailContent,
         });
 
         // Track sent event
@@ -76,6 +89,48 @@ Deno.serve(async (req) => {
         failedCount++;
       }
     }
+
+function convertBlocksToHTML(blocks) {
+  let html = '<div style="max-width: 600px; margin: 0 auto; font-family: -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, sans-serif; padding: 20px;">';
+  
+  blocks.forEach(block => {
+    const { type, content } = block;
+    
+    switch (type) {
+      case 'heading':
+        const size = content.level === 'h1' ? '32px' : content.level === 'h2' ? '24px' : '20px';
+        html += `<h${content.level.slice(1)} style="text-align: ${content.align}; color: ${content.color}; margin: 0 0 16px 0; font-size: ${size};">${content.text}</h${content.level.slice(1)}>`;
+        break;
+      case 'text':
+        html += `<p style="text-align: ${content.align}; color: ${content.color}; margin: 0 0 16px 0; line-height: 1.6;">${content.text}</p>`;
+        break;
+      case 'button':
+        html += `<div style="text-align: ${content.align}; margin: 16px 0;"><a href="${content.url}" style="display: inline-block; padding: 12px 32px; background-color: ${content.bgColor}; color: ${content.textColor}; text-decoration: none; border-radius: 8px; font-weight: 600;">${content.text}</a></div>`;
+        break;
+      case 'image':
+        if (content.url) {
+          html += `<div style="text-align: ${content.align}; margin: 16px 0;"><img src="${content.url}" alt="${content.alt}" style="width: ${content.width}; max-width: 100%; height: auto;" /></div>`;
+        }
+        break;
+      case 'divider':
+        html += `<hr style="border: none; border-top: ${content.height}px solid ${content.color}; margin: 24px 0;" />`;
+        break;
+      case 'spacer':
+        html += `<div style="height: ${content.height}px;"></div>`;
+        break;
+      case 'columns':
+        html += '<table style="width: 100%; margin: 16px 0;"><tr>';
+        content.contents.forEach(col => {
+          html += `<td style="width: ${100/content.columns}%; vertical-align: top; padding: 0 8px;">${col || ''}</td>`;
+        });
+        html += '</tr></table>';
+        break;
+    }
+  });
+  
+  html += '</div>';
+  return html;
+}
 
     await base44.entities.Campaign.update(campaign_id, {
       status: failedCount === contacts.length ? 'failed' : 'sent',
