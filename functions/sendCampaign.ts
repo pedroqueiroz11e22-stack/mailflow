@@ -30,15 +30,51 @@ Deno.serve(async (req) => {
     const senderEmail = settings.length > 0 ? settings[0].sender_email : Deno.env.get('SMTP_USER');
     const senderName = settings.length > 0 && settings[0].sender_name ? settings[0].sender_name : 'Email Marketing';
 
+    const smtpHost = Deno.env.get('SMTP_HOST');
+    const smtpPort = Deno.env.get('SMTP_PORT');
+    const smtpUser = Deno.env.get('SMTP_USER');
+    const smtpPassword = Deno.env.get('SMTP_PASSWORD');
+
+    console.log(`[SMTP] Connecting to ${smtpHost}:${smtpPort} as ${smtpUser}`);
+
+    if (!smtpHost || !smtpPort || !smtpUser || !smtpPassword) {
+      console.error('[SMTP] Missing credentials - check environment variables');
+      return Response.json({ 
+        error: 'SMTP credentials not configured',
+        missing: {
+          host: !smtpHost,
+          port: !smtpPort,
+          user: !smtpUser,
+          password: !smtpPassword
+        }
+      }, { status: 500 });
+    }
+
     const transporter = nodemailer.createTransport({
-      host: Deno.env.get('SMTP_HOST'),
-      port: parseInt(Deno.env.get('SMTP_PORT')),
-      secure: true,
+      host: smtpHost,
+      port: parseInt(smtpPort),
+      secure: parseInt(smtpPort) === 465,
       auth: {
-        user: Deno.env.get('SMTP_USER'),
-        pass: Deno.env.get('SMTP_PASSWORD'),
+        user: smtpUser,
+        pass: smtpPassword,
       },
+      connectionTimeout: 30000,
+      greetingTimeout: 30000
     });
+
+    // Verify SMTP connection
+    try {
+      await transporter.verify();
+      console.log('[SMTP] Connection verified successfully');
+    } catch (verifyError) {
+      console.error('[SMTP] Verification failed:', verifyError.message);
+      return Response.json({
+        error: 'SMTP authentication failed',
+        details: verifyError.message,
+        provider: 'SMTP',
+        action: 'send_campaign'
+      }, { status: 401 });
+    }
 
     let sentCount = 0;
     let failedCount = 0;
@@ -58,12 +94,16 @@ Deno.serve(async (req) => {
 
     for (const contact of contacts) {
       try {
+        console.log(`[SEND] Sending to ${contact.email}...`);
+        
         await transporter.sendMail({
           from: `${campaign.from_name || senderName} <${senderEmail}>`,
           to: contact.email,
           subject: campaign.subject,
           html: emailContent,
         });
+
+        console.log(`[SEND] Successfully sent to ${contact.email}`);
 
         // Track sent event
         await base44.asServiceRole.entities.EmailEvent.create({
@@ -75,7 +115,7 @@ Deno.serve(async (req) => {
 
         sentCount++;
       } catch (error) {
-        console.error(`Failed to send to ${contact.email}:`, error.message);
+        console.error(`[SEND] Failed to send to ${contact.email}:`, error.message);
         
         // Track bounced event
         await base44.asServiceRole.entities.EmailEvent.create({
