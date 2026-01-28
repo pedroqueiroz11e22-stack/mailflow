@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Send, Save, Calendar, Clock } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { createPageUrl } from '../utils';
 import EnhancedEmailEditor from '../components/campaigns/EnhancedEmailEditor';
 import TemplateManager from '../components/campaigns/TemplateManager';
@@ -24,6 +25,8 @@ export default function NewCampaign() {
   const [scheduleEnabled, setScheduleEnabled] = useState(false);
   const [scheduledDate, setScheduledDate] = useState('');
   const [scheduledTime, setScheduledTime] = useState('');
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [showSaveTemplate, setShowSaveTemplate] = useState(false);
 
   const { data: contacts = [] } = useQuery({
     queryKey: ['contacts'],
@@ -224,12 +227,23 @@ export default function NewCampaign() {
           {/* Email Content */}
           <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
             <CardHeader>
-              <CardTitle>Conteúdo do Email</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle>Conteúdo do Email</CardTitle>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowTemplates(true)}
+                >
+                  Escolher Template
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
-              <EmailEditor
+              <EnhancedEmailEditor
                 value={formData.content}
                 onChange={(content) => setFormData({ ...formData, content })}
+                onSaveAsTemplate={() => setShowSaveTemplate(true)}
               />
             </CardContent>
           </Card>
@@ -332,6 +346,48 @@ export default function NewCampaign() {
             </Button>
           </div>
         </div>
+
+        <TemplateManager
+          open={showTemplates}
+          onClose={() => setShowTemplates(false)}
+          onSelectTemplate={(content) => setFormData({ ...formData, content })}
+        />
+
+        <Dialog open={showSaveTemplate} onOpenChange={setShowSaveTemplate}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Salvar como Template</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label>Nome do Template</Label>
+                <Input
+                  id="template-name"
+                  placeholder="Ex: Newsletter Mensal"
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setShowSaveTemplate(false)}>
+                  Cancelar
+                </Button>
+                <Button onClick={async () => {
+                  const name = document.getElementById('template-name').value;
+                  if (name && formData.content) {
+                    await base44.entities.EmailTemplate.create({
+                      name,
+                      content: formData.content,
+                      category: 'custom'
+                    });
+                    setShowSaveTemplate(false);
+                    alert('Template salvo com sucesso!');
+                  }
+                }}>
+                  Salvar
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
