@@ -1,20 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, Upload, Trash2, Edit, Mail, CheckCircle, XCircle } from "lucide-react";
+import { Plus, Search, Upload, Trash2, Edit, Mail, CheckCircle, XCircle, List as ListIcon, Filter } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import ContactForm from '../components/contacts/ContactForm';
 import ContactImport from '../components/contacts/ContactImport';
+import ListManager from '../components/contacts/ListManager';
+import BulkActions from '../components/contacts/BulkActions';
 import { Badge } from "@/components/ui/badge";
 
 export default function Contacts() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
+  const [showListManager, setShowListManager] = useState(false);
   const [editingContact, setEditingContact] = useState(null);
+  const [selectedContacts, setSelectedContacts] = useState([]);
+  const [filterList, setFilterList] = useState('all');
+  const [filterTag, setFilterTag] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
 
   const queryClient = useQueryClient();
 
@@ -22,6 +31,15 @@ export default function Contacts() {
     queryKey: ['contacts'],
     queryFn: () => base44.entities.Contact.list('-created_date'),
   });
+
+  const { data: lists = [] } = useQuery({
+    queryKey: ['contact-lists'],
+    queryFn: () => base44.entities.ContactList.list(),
+  });
+
+  const allTags = useMemo(() => {
+    return [...new Set(contacts.flatMap(c => c.tags || []))];
+  }, [contacts]);
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Contact.create(data),
@@ -74,11 +92,21 @@ export default function Contacts() {
     alert(`${count} contatos importados com sucesso!`);
   };
 
-  const filteredContacts = contacts.filter(contact =>
-    contact.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    contact.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    contact.company?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredContacts = useMemo(() => {
+    return contacts.filter(contact => {
+      const matchesSearch = contact.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        contact.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        contact.company?.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesList = filterList === 'all' || (contact.list_ids || []).includes(filterList);
+      const matchesTag = filterTag === 'all' || (contact.tags || []).includes(filterTag);
+      const matchesStatus = filterStatus === 'all' || 
+        (filterStatus === 'subscribed' && contact.subscribed) ||
+        (filterStatus === 'unsubscribed' && !contact.subscribed);
+      
+      return matchesSearch && matchesList && matchesTag && matchesStatus;
+    });
+  }, [contacts, searchTerm, filterList, filterTag, filterStatus]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50 to-pink-50">
@@ -89,7 +117,14 @@ export default function Contacts() {
             <h1 className="text-4xl font-bold text-gray-900 mb-2">Contatos</h1>
             <p className="text-gray-600">Gerencie sua lista de destinatários</p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-3 flex-wrap">
+            <Button
+              onClick={() => setShowListManager(true)}
+              variant="outline"
+              className="gap-2"
+            >
+              <ListIcon className="w-4 h-4" /> Gerenciar Listas
+            </Button>
             <Button
               onClick={() => setShowImportDialog(true)}
               variant="outline"
@@ -106,9 +141,9 @@ export default function Contacts() {
           </div>
         </div>
 
-        {/* Search */}
+        {/* Search & Filters */}
         <Card className="mb-6 bg-white/80 backdrop-blur-sm border-0 shadow-lg">
-          <CardContent className="pt-6">
+          <CardContent className="pt-6 space-y-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <Input
@@ -118,6 +153,78 @@ export default function Contacts() {
                 className="pl-10"
               />
             </div>
+
+            <div className="flex flex-wrap gap-3 items-center">
+              <Filter className="w-4 h-4 text-gray-500" />
+              
+              <Select value={filterList} onValueChange={setFilterList}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Lista" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as Listas</SelectItem>
+                  {lists.map(list => (
+                    <SelectItem key={list.id} value={list.id}>
+                      {list.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={filterTag} onValueChange={setFilterTag}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Tag" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as Tags</SelectItem>
+                  {allTags.map(tag => (
+                    <SelectItem key={tag} value={tag}>
+                      {tag}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="subscribed">Inscritos</SelectItem>
+                  <SelectItem value="unsubscribed">Não Inscritos</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {(filterList !== 'all' || filterTag !== 'all' || filterStatus !== 'all') && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setFilterList('all');
+                    setFilterTag('all');
+                    setFilterStatus('all');
+                  }}
+                >
+                  Limpar Filtros
+                </Button>
+              )}
+            </div>
+
+            {selectedContacts.length > 0 && (
+              <div className="flex items-center gap-2 p-3 bg-indigo-50 rounded-lg">
+                <span className="text-sm font-medium text-indigo-900">
+                  {selectedContacts.length} contato(s) selecionado(s)
+                </span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setSelectedContacts([])}
+                >
+                  Limpar Seleção
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -148,6 +255,16 @@ export default function Contacts() {
                     className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                   >
                     <div className="flex items-center gap-4 flex-1">
+                      <Checkbox
+                        checked={selectedContacts.includes(contact.id)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setSelectedContacts([...selectedContacts, contact.id]);
+                          } else {
+                            setSelectedContacts(selectedContacts.filter(id => id !== contact.id));
+                          }
+                        }}
+                      />
                       <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
                         {contact.name ? contact.name[0].toUpperCase() : contact.email[0].toUpperCase()}
                       </div>
@@ -166,15 +283,22 @@ export default function Contacts() {
                         {contact.company && (
                           <p className="text-xs text-gray-500">{contact.company}</p>
                         )}
-                        {contact.tags && contact.tags.length > 0 && (
-                          <div className="flex gap-1 mt-1">
-                            {contact.tags.map((tag) => (
-                              <Badge key={tag} variant="outline" className="text-xs">
-                                {tag}
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {(contact.list_ids || []).map(listId => {
+                            const list = lists.find(l => l.id === listId);
+                            return list ? (
+                              <Badge key={listId} className="bg-indigo-100 text-indigo-800 text-xs">
+                                <ListIcon className="w-3 h-3 mr-1" />
+                                {list.name}
                               </Badge>
-                            ))}
-                          </div>
-                        )}
+                            ) : null;
+                          })}
+                          {(contact.tags || []).map((tag) => (
+                            <Badge key={tag} variant="outline" className="text-xs">
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
                       </div>
                     </div>
                     <div className="flex gap-2">
@@ -240,6 +364,18 @@ export default function Contacts() {
             <ContactImport onImportComplete={handleImportComplete} />
           </DialogContent>
         </Dialog>
+
+        {/* List Manager */}
+        <ListManager 
+          open={showListManager}
+          onClose={() => setShowListManager(false)}
+        />
+
+        {/* Bulk Actions */}
+        <BulkActions
+          selectedContacts={selectedContacts}
+          onClose={() => setSelectedContacts([])}
+        />
       </div>
     </div>
   );
