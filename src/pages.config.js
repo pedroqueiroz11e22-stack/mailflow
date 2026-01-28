@@ -47,24 +47,24 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
-import Dashboard from './pages/Dashboard';
-import Contacts from './pages/Contacts';
-import NewCampaign from './pages/NewCampaign';
-import Campaigns from './pages/Campaigns';
-import Settings from './pages/Settings';
-import Inbox from './pages/Inbox';
 import Analytics from './pages/Analytics';
+import Campaigns from './pages/Campaigns';
+import Contacts from './pages/Contacts';
+import Dashboard from './pages/Dashboard';
+import Inbox from './pages/Inbox';
+import NewCampaign from './pages/NewCampaign';
+import Settings from './pages/Settings';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
-    "Dashboard": Dashboard,
-    "Contacts": Contacts,
-    "NewCampaign": NewCampaign,
-    "Campaigns": Campaigns,
-    "Settings": Settings,
-    "Inbox": Inbox,
     "Analytics": Analytics,
+    "Campaigns": Campaigns,
+    "Contacts": Contacts,
+    "Dashboard": Dashboard,
+    "Inbox": Inbox,
+    "NewCampaign": NewCampaign,
+    "Settings": Settings,
 }
 
 export const pagesConfig = {

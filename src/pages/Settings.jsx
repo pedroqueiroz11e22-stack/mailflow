@@ -18,7 +18,16 @@ export default function Settings() {
     sender_email: '',
     sender_name: '',
     reply_to_email: '',
+    smtp_host: '',
+    smtp_port: '465',
+    smtp_user: '',
+    smtp_password: '',
+    imap_host: '',
+    imap_port: '993',
   });
+
+  const [testResult, setTestResult] = useState(null);
+  const [testing, setTesting] = useState(false);
 
   const { data: settings = [] } = useQuery({
     queryKey: ['settings'],
@@ -31,6 +40,12 @@ export default function Settings() {
         sender_email: settings[0].sender_email || '',
         sender_name: settings[0].sender_name || '',
         reply_to_email: settings[0].reply_to_email || '',
+        smtp_host: settings[0].smtp_host || '',
+        smtp_port: settings[0].smtp_port || '465',
+        smtp_user: settings[0].smtp_user || '',
+        smtp_password: settings[0].smtp_password || '',
+        imap_host: settings[0].imap_host || '',
+        imap_port: settings[0].imap_port || '993',
       });
     }
   }, [settings]);
@@ -59,11 +74,41 @@ export default function Settings() {
     },
   });
 
+  const handleTestSMTP = async () => {
+    if (!formData.smtp_host || !formData.smtp_user || !formData.smtp_password) {
+      setTestResult({ success: false, message: 'Preencha todos os campos SMTP primeiro' });
+      return;
+    }
+
+    setTesting(true);
+    setTestResult(null);
+
+    try {
+      const { data } = await base44.functions.invoke('testSMTPSettings', {
+        smtp_host: formData.smtp_host,
+        smtp_port: formData.smtp_port,
+        smtp_user: formData.smtp_user,
+        smtp_password: formData.smtp_password,
+      });
+      
+      setTestResult(data);
+    } catch (error) {
+      setTestResult({ success: false, message: error.message });
+    } finally {
+      setTesting(false);
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     
     if (!formData.sender_email) {
       alert('Por favor, preencha o email do remetente');
+      return;
+    }
+
+    if (!formData.smtp_host || !formData.smtp_user || !formData.smtp_password) {
+      alert('Por favor, preencha as configurações SMTP');
       return;
     }
 
@@ -137,22 +182,122 @@ export default function Settings() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Server className="w-5 h-5 text-purple-600" />
-                Informações SMTP
+                Configurações SMTP
               </CardTitle>
               <p className="text-sm text-gray-600 mt-2">
-                Suas credenciais SMTP já estão configuradas nas variáveis de ambiente
+                Configure o servidor de envio de emails
               </p>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h4 className="font-semibold text-blue-900 mb-2">✅ SMTP Configurado</h4>
-                <ul className="text-sm text-blue-800 space-y-1">
-                  <li>• <strong>Host:</strong> smtp.hostinger.com</li>
-                  <li>• <strong>Porta:</strong> 465 (SSL/TLS)</li>
-                  <li>• <strong>Usuário:</strong> Configurado via variáveis de ambiente</li>
-                  <li>• O sistema usará essas credenciais para enviar todas as campanhas</li>
-                </ul>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="smtp_host">Host SMTP *</Label>
+                  <Input
+                    id="smtp_host"
+                    value={formData.smtp_host}
+                    onChange={(e) => setFormData({ ...formData, smtp_host: e.target.value })}
+                    placeholder="smtp.hostinger.com"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="smtp_port">Porta *</Label>
+                  <Input
+                    id="smtp_port"
+                    value={formData.smtp_port}
+                    onChange={(e) => setFormData({ ...formData, smtp_port: e.target.value })}
+                    placeholder="465"
+                  />
+                </div>
               </div>
+
+              <div>
+                <Label htmlFor="smtp_user">Usuário SMTP *</Label>
+                <Input
+                  id="smtp_user"
+                  type="email"
+                  value={formData.smtp_user}
+                  onChange={(e) => setFormData({ ...formData, smtp_user: e.target.value })}
+                  placeholder="seu@email.com"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="smtp_password">Senha SMTP *</Label>
+                <Input
+                  id="smtp_password"
+                  type="password"
+                  value={formData.smtp_password}
+                  onChange={(e) => setFormData({ ...formData, smtp_password: e.target.value })}
+                  placeholder="••••••••"
+                />
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleTestSMTP}
+                disabled={testing}
+                className="w-full"
+              >
+                {testing ? 'Testando...' : 'Testar Conexão SMTP'}
+              </Button>
+
+              {testResult && (
+                <div className={`rounded-lg p-4 ${testResult.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
+                  <div className="flex items-start gap-2">
+                    {testResult.success ? (
+                      <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5" />
+                    ) : (
+                      <AlertCircle className="w-5 h-5 text-red-600 mt-0.5" />
+                    )}
+                    <div>
+                      <h4 className={`font-semibold ${testResult.success ? 'text-green-900' : 'text-red-900'}`}>
+                        {testResult.success ? 'Conexão bem-sucedida!' : 'Erro na conexão'}
+                      </h4>
+                      <p className={`text-sm mt-1 ${testResult.success ? 'text-green-800' : 'text-red-800'}`}>
+                        {testResult.message}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Mail className="w-5 h-5 text-blue-600" />
+                Configurações IMAP (Recebimento)
+              </CardTitle>
+              <p className="text-sm text-gray-600 mt-2">
+                Configure o servidor para receber emails
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="imap_host">Host IMAP</Label>
+                  <Input
+                    id="imap_host"
+                    value={formData.imap_host}
+                    onChange={(e) => setFormData({ ...formData, imap_host: e.target.value })}
+                    placeholder="imap.hostinger.com"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="imap_port">Porta</Label>
+                  <Input
+                    id="imap_port"
+                    value={formData.imap_port}
+                    onChange={(e) => setFormData({ ...formData, imap_port: e.target.value })}
+                    placeholder="993"
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-gray-500">
+                O IMAP usará o mesmo usuário e senha do SMTP
+              </p>
             </CardContent>
           </Card>
 
@@ -174,7 +319,8 @@ export default function Settings() {
             <p><strong>Email do Remetente:</strong> O endereço que aparecerá como remetente nas campanhas</p>
             <p><strong>Nome do Remetente:</strong> O nome que será exibido junto ao email</p>
             <p><strong>Email de Resposta:</strong> Para onde serão enviadas as respostas dos destinatários</p>
-            <p><strong>SMTP:</strong> As credenciais já estão configuradas no sistema via variáveis de ambiente</p>
+            <p><strong>SMTP:</strong> Servidor para envio de emails (porta 465 ou 587)</p>
+            <p><strong>IMAP:</strong> Servidor para recebimento de emails (porta 993)</p>
           </CardContent>
         </Card>
       </div>

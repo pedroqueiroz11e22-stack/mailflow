@@ -30,10 +30,14 @@ Deno.serve(async (req) => {
     const senderEmail = settings.length > 0 ? settings[0].sender_email : Deno.env.get('SMTP_USER');
     const senderName = settings.length > 0 && settings[0].sender_name ? settings[0].sender_name : 'Email Marketing';
 
-    const smtpHost = Deno.env.get('SMTP_HOST');
-    const smtpPort = Deno.env.get('SMTP_PORT');
-    const smtpUser = Deno.env.get('SMTP_USER');
-    const smtpPassword = Deno.env.get('SMTP_PASSWORD');
+    // Get settings from database (fallback to env vars if not set)
+    const settingsList = await base44.asServiceRole.entities.Settings.list();
+    const settings = settingsList.length > 0 ? settingsList[0] : {};
+
+    const smtpHost = settings.smtp_host || Deno.env.get('SMTP_HOST');
+    const smtpPort = settings.smtp_port || Deno.env.get('SMTP_PORT');
+    const smtpUser = settings.smtp_user || Deno.env.get('SMTP_USER');
+    const smtpPassword = settings.smtp_password || Deno.env.get('SMTP_PASSWORD');
 
     console.log(`[SMTP] Connecting to ${smtpHost}:${smtpPort} as ${smtpUser}`);
 
