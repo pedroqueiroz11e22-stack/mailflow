@@ -1,9 +1,11 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import Imap from 'npm:imap@0.8.19';
+import { simpleParser } from 'npm:mailparser@3.6.5';
 
 Deno.serve(async (req) => {
+  const base44 = createClientFromRequest(req);
+  
   try {
-    const base44 = createClientFromRequest(req);
-    
     const isAuth = await base44.auth.isAuthenticated();
     if (!isAuth) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
@@ -14,26 +16,92 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
-    // Simulação de emails para demonstração
-    // Em produção, você precisaria integrar com um serviço de email via API
-    // como Gmail API, Microsoft Graph, ou usar um webhook
-    
-    const mockEmails = [
-      {
-        from_email: 'cliente@exemplo.com',
-        from_name: 'Cliente Exemplo',
-        subject: 'Pergunta sobre seus serviços',
-        body_text: 'Olá, gostaria de saber mais sobre seus serviços de email marketing.',
-        body_html: '<p>Olá, gostaria de saber mais sobre seus serviços de email marketing.</p>',
-        received_date: new Date().toISOString(),
-        message_id: `msg_${Date.now()}_1`,
-        is_read: false
-      }
-    ];
+    const imapConfig = {
+      user: Deno.env.get('SMTP_USER'),
+      password: Deno.env.get('SMTP_PASSWORD'),
+      host: Deno.env.get('IMAP_HOST'),
+      port: parseInt(Deno.env.get('IMAP_PORT') || '993'),
+      tls: true,
+      tlsOptions: { rejectUnauthorized: false }
+    };
 
+    const imap = new Imap(imapConfig);
     let newEmails = 0;
 
-    for (const email of mockEmails) {
+    const fetchedEmails = await new Promise((resolve, reject) => {
+      const emails = [];
+      const timeout = setTimeout(() => {
+        reject(new Error('IMAP connection timeout'));
+      }, 30000);
+      
+      imap.once('ready', () => {
+        clearTimeout(timeout);
+        imap.openBox('INBOX', false, (err, box) => {
+          if (err) {
+            reject(err);
+            return;
+          }
+
+          if (box.messages.total === 0) {
+            imap.end();
+            resolve([]);
+            return;
+          }
+
+          const fetch = imap.seq.fetch('1:*', {
+            bodies: '',
+            struct: true
+          });
+
+          fetch.on('message', (msg, seqno) => {
+            let buffer = '';
+            
+            msg.on('body', (stream, info) => {
+              stream.on('data', (chunk) => {
+                buffer += chunk.toString('utf8');
+              });
+            });
+
+            msg.once('end', async () => {
+              try {
+                const parsed = await simpleParser(buffer);
+                
+                emails.push({
+                  from_email: parsed.from?.value?.[0]?.address || '',
+                  from_name: parsed.from?.value?.[0]?.name || '',
+                  subject: parsed.subject || '(Sem assunto)',
+                  body_text: parsed.text || '',
+                  body_html: parsed.html || '',
+                  received_date: parsed.date?.toISOString() || new Date().toISOString(),
+                  message_id: parsed.messageId || `msg_${Date.now()}_${seqno}`,
+                  is_read: false
+                });
+              } catch (e) {
+                console.error('Error parsing email:', e);
+              }
+            });
+          });
+
+          fetch.once('error', (err) => {
+            reject(err);
+          });
+
+          fetch.once('end', () => {
+            imap.end();
+            resolve(emails);
+          });
+        });
+      });
+
+      imap.once('error', (err) => {
+        clearTimeout(timeout);
+        reject(err);
+      });
+
+      imap.connect();
+    });
+
+    for (const email of fetchedEmails) {
       const existing = await base44.asServiceRole.entities.ReceivedEmail.filter({
         message_id: email.message_id
       });
@@ -46,9 +114,9 @@ Deno.serve(async (req) => {
 
     return Response.json({
       success: true,
-      total_fetched: mockEmails.length,
+      total_fetched: fetchedEmails.length,
       new_emails: newEmails,
-      message: newEmails > 0 ? `${newEmails} novos emails importados` : 'Nenhum novo email'
+      message: `${newEmails} novos emails importados de ${fetchedEmails.length} total`
     });
 
   } catch (error) {
