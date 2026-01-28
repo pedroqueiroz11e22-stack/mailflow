@@ -23,13 +23,16 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Campaign not found' }, { status: 404 });
     }
 
+    const settings = await base44.entities.Settings.list();
+    const defaultSenderName = settings.length > 0 ? settings[0].sender_name : undefined;
+
     let sentCount = 0;
     let failedCount = 0;
 
     for (const contact of contacts) {
       try {
         await base44.integrations.Core.SendEmail({
-          from_name: campaign.from_name || undefined,
+          from_name: campaign.from_name || defaultSenderName || undefined,
           to: contact.email,
           subject: campaign.subject,
           body: campaign.content,

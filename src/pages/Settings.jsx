@@ -133,11 +133,11 @@ export default function Settings() {
               </div>
 
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h4 className="font-semibold text-blue-900 mb-2">📌 Importante</h4>
+                <h4 className="font-semibold text-blue-900 mb-2">📌 Como funciona</h4>
                 <ul className="text-sm text-blue-800 space-y-1">
-                  <li>• Use um email profissional do seu domínio</li>
-                  <li>• Evite usar emails gratuitos (Gmail, Hotmail) para melhor entregabilidade</li>
-                  <li>• Configure SPF e DKIM no seu domínio para evitar spam</li>
+                  <li>• O <strong>email do remetente</strong> é apenas informativo - o Base44 usa o email configurado no app</li>
+                  <li>• O <strong>nome do remetente</strong> será exibido nos emails enviados</li>
+                  <li>• Configure estas informações para manter um padrão nas suas campanhas</li>
                 </ul>
               </div>
 
