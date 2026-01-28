@@ -18,15 +18,7 @@ export default function Settings() {
     sender_email: '',
     sender_name: '',
     reply_to_email: '',
-    smtp_host: '',
-    smtp_port: 465,
-    smtp_user: '',
-    smtp_password: '',
-    smtp_secure: true,
   });
-
-  const [testingSmtp, setTestingSmtp] = useState(false);
-  const [testResult, setTestResult] = useState(null);
 
   const { data: settings = [] } = useQuery({
     queryKey: ['settings'],
@@ -39,21 +31,15 @@ export default function Settings() {
         sender_email: settings[0].sender_email || '',
         sender_name: settings[0].sender_name || '',
         reply_to_email: settings[0].reply_to_email || '',
-        smtp_host: settings[0].smtp_host || '',
-        smtp_port: settings[0].smtp_port || 465,
-        smtp_user: settings[0].smtp_user || '',
-        smtp_password: settings[0].smtp_password || '',
-        smtp_secure: settings[0].smtp_secure !== false,
       });
     }
   }, [settings]);
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Settings.create(data),
-    onSuccess: (settings) => {
+    onSuccess: () => {
       base44.analytics.track({
-        eventName: 'settings_created',
-        properties: { has_smtp: !!settings.smtp_host }
+        eventName: 'settings_created'
       });
       
       queryClient.invalidateQueries(['settings']);
@@ -65,57 +51,13 @@ export default function Settings() {
     mutationFn: ({ id, data }) => base44.entities.Settings.update(id, data),
     onSuccess: () => {
       base44.analytics.track({
-        eventName: 'settings_updated',
-        properties: { has_smtp: !!formData.smtp_host }
+        eventName: 'settings_updated'
       });
       
       queryClient.invalidateQueries(['settings']);
       alert('Configurações atualizadas com sucesso!');
     },
   });
-
-  const testSmtpMutation = useMutation({
-    mutationFn: async (smtpData) => {
-      const response = await base44.functions.invoke('testSmtp', smtpData);
-      return response.data;
-    },
-    onSuccess: (data) => {
-      base44.analytics.track({
-        eventName: 'smtp_test_success',
-        properties: { host: formData.smtp_host }
-      });
-      
-      setTestResult({ success: true, message: data.message });
-    },
-    onError: (error) => {
-      base44.analytics.track({
-        eventName: 'smtp_test_failed',
-        properties: { host: formData.smtp_host }
-      });
-      
-      setTestResult({ success: false, message: error.response?.data?.error || 'Erro ao testar SMTP' });
-    },
-  });
-
-  const handleTestSmtp = async () => {
-    if (!formData.smtp_host || !formData.smtp_port || !formData.smtp_user || !formData.smtp_password) {
-      setTestResult({ success: false, message: 'Preencha todos os campos SMTP antes de testar' });
-      return;
-    }
-
-    setTestingSmtp(true);
-    setTestResult(null);
-    
-    await testSmtpMutation.mutateAsync({
-      smtp_host: formData.smtp_host,
-      smtp_port: parseInt(formData.smtp_port),
-      smtp_user: formData.smtp_user,
-      smtp_password: formData.smtp_password,
-      smtp_secure: formData.smtp_secure,
-    });
-    
-    setTestingSmtp(false);
-  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -195,101 +137,22 @@ export default function Settings() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Server className="w-5 h-5 text-purple-600" />
-                Servidor SMTP Personalizado
+                Informações SMTP
               </CardTitle>
               <p className="text-sm text-gray-600 mt-2">
-                Configure seu próprio servidor SMTP para enviar emails através da sua conta
+                Suas credenciais SMTP já estão configuradas nas variáveis de ambiente
               </p>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="smtp_host">Host SMTP</Label>
-                  <Input
-                    id="smtp_host"
-                    value={formData.smtp_host}
-                    onChange={(e) => setFormData({ ...formData, smtp_host: e.target.value })}
-                    placeholder="smtp.hostinger.com"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="smtp_port">Porta</Label>
-                  <Input
-                    id="smtp_port"
-                    type="number"
-                    value={formData.smtp_port}
-                    onChange={(e) => setFormData({ ...formData, smtp_port: e.target.value })}
-                    placeholder="465"
-                  />
-                </div>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h4 className="font-semibold text-blue-900 mb-2">✅ SMTP Configurado</h4>
+                <ul className="text-sm text-blue-800 space-y-1">
+                  <li>• <strong>Host:</strong> smtp.hostinger.com</li>
+                  <li>• <strong>Porta:</strong> 465 (SSL/TLS)</li>
+                  <li>• <strong>Usuário:</strong> Configurado via variáveis de ambiente</li>
+                  <li>• O sistema usará essas credenciais para enviar todas as campanhas</li>
+                </ul>
               </div>
-
-              <div>
-                <Label htmlFor="smtp_user">Usuário SMTP</Label>
-                <Input
-                  id="smtp_user"
-                  value={formData.smtp_user}
-                  onChange={(e) => setFormData({ ...formData, smtp_user: e.target.value })}
-                  placeholder="seu@email.com"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="smtp_password">Senha SMTP</Label>
-                <Input
-                  id="smtp_password"
-                  type="password"
-                  value={formData.smtp_password}
-                  onChange={(e) => setFormData({ ...formData, smtp_password: e.target.value })}
-                  placeholder="••••••••"
-                />
-              </div>
-
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <div>
-                  <Label htmlFor="smtp_secure" className="cursor-pointer">Usar SSL/TLS</Label>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Ativado para porta 465, desativado para porta 587
-                  </p>
-                </div>
-                <Switch
-                  id="smtp_secure"
-                  checked={formData.smtp_secure}
-                  onCheckedChange={(checked) => setFormData({ ...formData, smtp_secure: checked })}
-                />
-              </div>
-
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                onClick={handleTestSmtp}
-                disabled={testingSmtp}
-              >
-                {testingSmtp ? 'Testando...' : 'Testar Configuração SMTP'}
-              </Button>
-
-              {testResult && (
-                <div className={`p-4 rounded-lg flex items-start gap-3 ${
-                  testResult.success 
-                    ? 'bg-green-50 border border-green-200' 
-                    : 'bg-red-50 border border-red-200'
-                }`}>
-                  {testResult.success ? (
-                    <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-                  ) : (
-                    <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-                  )}
-                  <div className="flex-1">
-                    <p className={`text-sm font-medium ${
-                      testResult.success ? 'text-green-900' : 'text-red-900'
-                    }`}>
-                      {testResult.message}
-                    </p>
-                  </div>
-                </div>
-              )}
             </CardContent>
           </Card>
 
@@ -305,13 +168,13 @@ export default function Settings() {
 
         <Card className="mt-6 bg-gradient-to-br from-purple-50 to-pink-50 border-purple-200">
           <CardHeader>
-            <CardTitle className="text-lg">💡 Informações Importantes</CardTitle>
+            <CardTitle className="text-lg">💡 Como Funciona</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm text-gray-700">
-            <p><strong>Porta 465:</strong> Usa SSL/TLS direto (mais seguro) - mantenha o switch ativado</p>
-            <p><strong>Porta 587:</strong> Usa STARTTLS - desative o switch SSL/TLS</p>
-            <p><strong>Teste antes de salvar:</strong> Use o botão "Testar" para validar suas credenciais</p>
-            <p><strong>Sem SMTP configurado:</strong> O sistema usará as variáveis de ambiente configuradas</p>
+            <p><strong>Email do Remetente:</strong> O endereço que aparecerá como remetente nas campanhas</p>
+            <p><strong>Nome do Remetente:</strong> O nome que será exibido junto ao email</p>
+            <p><strong>Email de Resposta:</strong> Para onde serão enviadas as respostas dos destinatários</p>
+            <p><strong>SMTP:</strong> As credenciais já estão configuradas no sistema via variáveis de ambiente</p>
           </CardContent>
         </Card>
       </div>

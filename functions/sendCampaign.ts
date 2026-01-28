@@ -26,39 +26,18 @@ Deno.serve(async (req) => {
 
     const settings = await base44.entities.Settings.list();
     
-    let smtpConfig;
-    let senderEmail;
-    let senderName = 'Email Marketing';
+    const senderEmail = settings.length > 0 ? settings[0].sender_email : Deno.env.get('SMTP_USER');
+    const senderName = settings.length > 0 && settings[0].sender_name ? settings[0].sender_name : 'Email Marketing';
 
-    if (settings.length > 0 && settings[0].smtp_host) {
-      const s = settings[0];
-      senderEmail = s.sender_email || s.smtp_user;
-      senderName = s.sender_name || 'Email Marketing';
-      
-      smtpConfig = {
-        host: s.smtp_host,
-        port: s.smtp_port,
-        secure: s.smtp_secure !== false,
-        auth: {
-          user: s.smtp_user,
-          pass: s.smtp_password,
-        },
-      };
-    } else {
-      senderEmail = Deno.env.get('SMTP_USER');
-      
-      smtpConfig = {
-        host: Deno.env.get('SMTP_HOST'),
-        port: parseInt(Deno.env.get('SMTP_PORT')),
-        secure: true,
-        auth: {
-          user: Deno.env.get('SMTP_USER'),
-          pass: Deno.env.get('SMTP_PASSWORD'),
-        },
-      };
-    }
-
-    const transporter = nodemailer.createTransport(smtpConfig);
+    const transporter = nodemailer.createTransport({
+      host: Deno.env.get('SMTP_HOST'),
+      port: parseInt(Deno.env.get('SMTP_PORT')),
+      secure: true,
+      auth: {
+        user: Deno.env.get('SMTP_USER'),
+        pass: Deno.env.get('SMTP_PASSWORD'),
+      },
+    });
 
     let sentCount = 0;
     let failedCount = 0;
