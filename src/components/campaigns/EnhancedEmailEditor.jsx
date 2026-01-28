@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { 
   Type, Image as ImageIcon, Link as LinkIcon, List, 
-  AlignLeft, AlignCenter, AlignRight, Code, Save, Layout
+  AlignLeft, AlignCenter, AlignRight, Code, Save, Layout, Paintbrush
 } from 'lucide-react';
+import VisualEmailBuilder from './VisualEmailBuilder';
 
 export default function EnhancedEmailEditor({ value, onChange, onSaveAsTemplate }) {
   const quillRef = useRef(null);
@@ -76,12 +77,19 @@ export default function EnhancedEmailEditor({ value, onChange, onSaveAsTemplate 
 
   return (
     <div className="space-y-4">
-      <Tabs defaultValue="visual" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="visual">Editor Visual</TabsTrigger>
+      <Tabs defaultValue="builder" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="builder" className="gap-2">
+            <Paintbrush className="w-4 h-4" /> Builder
+          </TabsTrigger>
+          <TabsTrigger value="visual">Editor</TabsTrigger>
           <TabsTrigger value="html">HTML</TabsTrigger>
           <TabsTrigger value="preview">Preview</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="builder">
+          <VisualEmailBuilder value={value} onChange={onChange} />
+        </TabsContent>
 
         <TabsContent value="visual" className="space-y-4">
           <Card className="p-4">
