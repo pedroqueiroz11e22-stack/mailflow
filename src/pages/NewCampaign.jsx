@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -24,6 +24,20 @@ export default function NewCampaign() {
     queryKey: ['contacts'],
     queryFn: () => base44.entities.Contact.filter({ subscribed: true }),
   });
+
+  const { data: settings = [] } = useQuery({
+    queryKey: ['settings'],
+    queryFn: () => base44.entities.Settings.list(),
+  });
+
+  useEffect(() => {
+    if (settings.length > 0 && !formData.from_name) {
+      setFormData(prev => ({
+        ...prev,
+        from_name: settings[0].sender_name || '',
+      }));
+    }
+  }, [settings]);
 
   const createCampaign = useMutation({
     mutationFn: (data) => base44.entities.Campaign.create(data),

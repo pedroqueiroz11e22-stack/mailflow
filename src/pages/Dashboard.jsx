@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, Send, Mail, Plus, TrendingUp } from "lucide-react";
+import { Users, Send, Mail, Plus, TrendingUp, Settings as SettingsIcon } from "lucide-react";
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 
@@ -31,11 +31,18 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50 to-purple-50">
       <div className="max-w-7xl mx-auto p-6 md:p-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            Dashboard de Email Marketing
-          </h1>
-          <p className="text-gray-600">Gerencie suas campanhas e contatos</p>
+        <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">
+              Dashboard de Email Marketing
+            </h1>
+            <p className="text-gray-600">Gerencie suas campanhas e contatos</p>
+          </div>
+          <Link to={createPageUrl('Settings')}>
+            <Button variant="outline" className="gap-2">
+              <SettingsIcon className="w-4 h-4" /> Configurações
+            </Button>
+          </Link>
         </div>
 
         {/* Stats Cards */}
