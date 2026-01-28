@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import nodemailer from 'npm:nodemailer@6.9.0';
 
 Deno.serve(async (req) => {
   try {
@@ -24,18 +25,29 @@ Deno.serve(async (req) => {
     }
 
     const settings = await base44.entities.Settings.list();
-    const defaultSenderName = settings.length > 0 ? settings[0].sender_name : undefined;
+    const senderEmail = settings.length > 0 ? settings[0].sender_email : Deno.env.get('SMTP_USER');
+    const senderName = settings.length > 0 && settings[0].sender_name ? settings[0].sender_name : 'Email Marketing';
+
+    const transporter = nodemailer.createTransport({
+      host: Deno.env.get('SMTP_HOST'),
+      port: parseInt(Deno.env.get('SMTP_PORT')),
+      secure: true,
+      auth: {
+        user: Deno.env.get('SMTP_USER'),
+        pass: Deno.env.get('SMTP_PASSWORD'),
+      },
+    });
 
     let sentCount = 0;
     let failedCount = 0;
 
     for (const contact of contacts) {
       try {
-        await base44.integrations.Core.SendEmail({
-          from_name: campaign.from_name || defaultSenderName || undefined,
+        await transporter.sendMail({
+          from: `${campaign.from_name || senderName} <${senderEmail}>`,
           to: contact.email,
           subject: campaign.subject,
-          body: campaign.content,
+          html: campaign.content,
         });
         sentCount++;
       } catch (error) {
