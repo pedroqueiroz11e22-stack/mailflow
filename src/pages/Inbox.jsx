@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Mail, MailOpen, RefreshCw, Search, ArrowLeft, Calendar } from "lucide-react";
+import { Mail, MailOpen, RefreshCw, Search, ArrowLeft, Calendar, Reply, Send } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -14,6 +15,9 @@ export default function Inbox() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedEmail, setSelectedEmail] = useState(null);
   const [syncing, setSyncing] = useState(false);
+  const [showReplyComposer, setShowReplyComposer] = useState(false);
+  const [replyBody, setReplyBody] = useState('');
+  const [sending, setSending] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: emails = [], isLoading } = useQuery({
@@ -47,9 +51,48 @@ export default function Inbox() {
 
   const handleEmailClick = (email) => {
     setSelectedEmail(email);
+    setShowReplyComposer(false);
+    setReplyBody('');
     if (!email.is_read) {
       markAsReadMutation.mutate({ id: email.id, is_read: true });
     }
+  };
+
+  const handleReply = () => {
+    setShowReplyComposer(true);
+  };
+
+  const sendReplyMutation = useMutation({
+    mutationFn: (data) => base44.functions.invoke('sendEmailReply', data),
+    onSuccess: () => {
+      base44.analytics.track({
+        eventName: 'email_reply_sent',
+        properties: { to: selectedEmail.from_email }
+      });
+      alert('Resposta enviada com sucesso!');
+      setShowReplyComposer(false);
+      setReplyBody('');
+      setSelectedEmail(null);
+    },
+    onError: (error) => {
+      alert('Erro ao enviar resposta: ' + (error.response?.data?.error || error.message));
+    }
+  });
+
+  const handleSendReply = async () => {
+    if (!replyBody.trim()) {
+      alert('Digite uma mensagem antes de enviar');
+      return;
+    }
+
+    setSending(true);
+    await sendReplyMutation.mutateAsync({
+      to_email: selectedEmail.from_email,
+      to_name: selectedEmail.from_name,
+      subject: selectedEmail.subject.startsWith('Re: ') ? selectedEmail.subject : `Re: ${selectedEmail.subject}`,
+      body: replyBody,
+    });
+    setSending(false);
   };
 
   const filteredEmails = emails.filter(email =>
@@ -167,7 +210,11 @@ export default function Inbox() {
           </CardContent>
         </Card>
 
-        <Dialog open={!!selectedEmail} onOpenChange={() => setSelectedEmail(null)}>
+        <Dialog open={!!selectedEmail} onOpenChange={() => {
+          setSelectedEmail(null);
+          setShowReplyComposer(false);
+          setReplyBody('');
+        }}>
           <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-xl">
@@ -187,14 +234,76 @@ export default function Inbox() {
                     {selectedEmail && new Date(selectedEmail.received_date).toLocaleString('pt-BR')}
                   </p>
                 </div>
-              </div>
-              <div className="prose max-w-none">
-                {selectedEmail?.body_html ? (
-                  <div dangerouslySetInnerHTML={{ __html: selectedEmail.body_html }} />
-                ) : (
-                  <div className="whitespace-pre-wrap">{selectedEmail?.body_text}</div>
+                {!showReplyComposer && (
+                  <Button 
+                    onClick={handleReply}
+                    variant="outline"
+                    className="gap-2 mt-2"
+                  >
+                    <Reply className="w-4 h-4" />
+                    Responder
+                  </Button>
                 )}
               </div>
+
+              {!showReplyComposer ? (
+                <div className="prose max-w-none">
+                  {selectedEmail?.body_html ? (
+                    <div dangerouslySetInnerHTML={{ __html: selectedEmail.body_html }} />
+                  ) : (
+                    <div className="whitespace-pre-wrap">{selectedEmail?.body_text}</div>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-4 border-t pt-4">
+                  <div>
+                    <p className="text-sm text-gray-600 mb-2">
+                      <strong>Para:</strong> {selectedEmail?.from_name || selectedEmail?.from_email}
+                    </p>
+                    <p className="text-sm text-gray-600 mb-4">
+                      <strong>Assunto:</strong> {selectedEmail?.subject.startsWith('Re: ') ? selectedEmail?.subject : `Re: ${selectedEmail?.subject}`}
+                    </p>
+                  </div>
+                  <Textarea
+                    placeholder="Digite sua resposta..."
+                    value={replyBody}
+                    onChange={(e) => setReplyBody(e.target.value)}
+                    rows={8}
+                    className="w-full"
+                  />
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setShowReplyComposer(false);
+                        setReplyBody('');
+                      }}
+                      disabled={sending}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      onClick={handleSendReply}
+                      disabled={sending}
+                      className="bg-indigo-600 hover:bg-indigo-700 gap-2"
+                    >
+                      <Send className="w-4 h-4" />
+                      {sending ? 'Enviando...' : 'Enviar Resposta'}
+                    </Button>
+                  </div>
+
+                  <div className="border-t pt-4 mt-4">
+                    <p className="text-xs text-gray-500 mb-2">Email original:</p>
+                    <div className="bg-gray-50 p-4 rounded-lg text-sm">
+                      {selectedEmail?.body_html ? (
+                        <div dangerouslySetInnerHTML={{ __html: selectedEmail.body_html }} />
+                      ) : (
+                        <div className="whitespace-pre-wrap">{selectedEmail?.body_text}</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </DialogContent>
         </Dialog>
