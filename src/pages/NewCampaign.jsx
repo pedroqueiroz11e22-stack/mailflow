@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Send, Save } from "lucide-react";
-import { createPageUrl } from './utils';
+import { createPageUrl } from '../utils';
 import EmailEditor from '../components/campaigns/EmailEditor';
 
 export default function NewCampaign() {
