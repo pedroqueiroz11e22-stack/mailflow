@@ -2,9 +2,9 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import nodemailer from 'npm:nodemailer@6.9.0';
 
 Deno.serve(async (req) => {
+  const base44 = createClientFromRequest(req);
+  
   try {
-    const base44 = createClientFromRequest(req);
-    
     // Check if user is authenticated
     const isAuth = await base44.auth.isAuthenticated();
     if (!isAuth) {
